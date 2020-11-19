@@ -1,4 +1,4 @@
-name: Serverless filesystem
+name: lua filesystem
 on:
   push
 jobs:
@@ -6,17 +6,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-           submodules: true
 
       - name: build docker image
-        run: docker build -t ${{ secrets.REGISTRY_USERNAME }}/9mine-serverless-fs:${GITHUB_REF##*/} .
+        run: docker build -t ${{ secrets.REGISTRY_USERNAME }}/9mine-lua-fs:${GITHUB_REF##*/} .
 
       - name: login to hub.docker.com
         run: docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: push image to registry
-        run: docker image push ${{ secrets.REGISTRY_USERNAME }}/9mine-serverless-fs:${GITHUB_REF##*/}
+        run: docker image push ${{ secrets.REGISTRY_USERNAME }}/9mine-lua-fs:${GITHUB_REF##*/}
       
       - name: Notify Telegram
         uses: yanzay/notify-telegram@v0.1.0
