@@ -1,0 +1,33 @@
+image:
+  repository: dievri/9mine-lua-fs
+  pullPolicy: Always
+  tag: "main"
+
+service:
+  type: ClusterIP
+  port: 2626
+
+fs: |
+  {% include 'common.j2' %}
+  wrapper_name: lua
+
+  fs:
+    "/":
+      name: root
+      readdir: |
+        echo .include.lua
+        echo directory
+      getattr: *dir
+      "/.include.lua":
+        name: lua_include_file
+        getattr: *file
+        read_file: |
+            cat <<EOF
+            say_hello = function(player_name, message)
+            minetest.chat_send_all("Hello from LUA-FS service")
+            end
+            table.insert(functions, say_hello)
+      "/directory":
+        name: subroot
+        getattr: *dir
+        readdir: 
