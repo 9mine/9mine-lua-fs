@@ -8,6 +8,7 @@ service:
   port: 2626
 
 fs: |
+  {% include 'include.j2' %}
   {% include 'common.j2' %}
   wrapper_name: lua
 
@@ -21,13 +22,8 @@ fs: |
       "/.include.lua":
         name: lua_include_file
         getattr: *file
-        read_file: |
-            cat <<EOF
-            say_hello = function(player_name, message)
-            minetest.chat_send_all("Hello from LUA-FS service")
-            end
-            table.insert(functions, say_hello)
+        read_file: *include
       "/directory":
         name: subroot
         getattr: *dir
-        readdir: 
+        readdir:
