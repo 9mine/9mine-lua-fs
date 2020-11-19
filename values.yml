@@ -8,7 +8,6 @@ service:
   port: 2626
 
 fs: |
-  {% include 'include.j2' %}
   {% include 'common.j2' %}
   wrapper_name: lua
 
@@ -22,7 +21,30 @@ fs: |
       "/.include.lua":
         name: lua_include_file
         getattr: *file
-        read_file: *include
+        read_file: |
+            cat <<EOF
+            say_hello = function(player_name, message)
+            minetest.chat_send_all("Hello from LUA-FS service")
+            end
+            table.insert(functions, say_hello)
+            filter = function(entry_path, entity)
+            if entry_path:match("^REPLACE_ME/%.?[%w]+%.lua") then
+                entity:set_properties({
+                    textures = {"core_lua.png"}
+                })
+                return "core_lua.png"
+            end
+            if entry_path:match("^REPLACE_ME/") then
+                entity:set_properties({
+                    visual = "cube",
+                    textures = {"core_console.png", "core_console.png", "core_console.png", "core_console.png",
+                                "core_console.png", "core_console.png"}
+                })
+                return "core_console.png"
+            end
+            end
+            table.insert(filters, filter)
+            EOF
       "/directory":
         name: subroot
         getattr: *dir
