@@ -35,6 +35,8 @@ fs: |
                 return "core_lua.png"
             end
             if entry_path:match("^REPLACE_ME/") then
+              local lua_entity = entity:get_luaentity()
+                lua_entity.visual = "cube"
                 entity:set_properties({
                     visual = "cube",
                     textures = {"core_console.png", "core_console.png", "core_console.png", "core_console.png",
@@ -44,6 +46,24 @@ fs: |
             end
             end
             table.insert(filters, filter)
+            craft = function(itemstack, player, old_craft_grid, craft_inv)
+                if itemstack:get_name() == "core:service_node" and old_craft_grid[1]:get_name() == "core:service_node" and
+                    old_craft_grid[2]:get_name() == "core:file_node" then
+                    local inventory = player.get_inventory(player)
+                    inventory:add_item("main", old_craft_grid[1])
+                    inventory:add_item("main", old_craft_grid[2])
+                    -- get info from service
+                    local service_meta = old_craft_grid[1]:get_meta()
+                    local service_path = service_meta:get_string("path")
+                    -- get info from file 
+                    local file_meta = old_craft_grid[2]:get_meta()
+                    local file_path = file_meta:get_string("path")
+                    -- set crafted item meta 
+                    minetest.chat_send_all("cp " .. file_path .. " -> " .. service_path)
+                    itemstack:take_item()
+                end
+            end
+            table.insert(crafts, craft)
             EOF
       "/directory":
         name: subroot
