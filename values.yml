@@ -15,9 +15,18 @@ fs: |
     "/":
       name: root
       readdir: |
-        echo .include.lua
         echo directory
       getattr: *dir
+      "/.form.lua":
+        name: lua_form_file
+        getattr: *file
+        read_file: |
+          cat << EOF
+          minetest.show_formspec(player:get_player_name(), "core:warning",
+          table.concat({"formspec_version[3]", "size[10,2,false]",
+                      "label[0.5,0.5;TestForm]",
+                      "button_exit[7,1.0;2.5,0.7;close;close]"}, ""))
+          EOF
       "/.include.lua":
         name: lua_include_file
         getattr: *file
@@ -27,14 +36,14 @@ fs: |
             minetest.chat_send_all("Hello from LUA-FS service")
             end
             table.insert(functions, say_hello)
-            filter = function(entry_path, entity)
-            if entry_path:match("^REPLACE_ME/%.?[%w]+%.lua") then
+            filter = function(entry, entity)
+            if entry.path:match("^REPLACE_ME/%.?[%w]+%.lua") then
                 entity:set_properties({
                     textures = {"core_lua.png"}
                 })
                 return "core_lua.png"
             end
-            if entry_path:match("^REPLACE_ME/") then
+            if entry.path:match("^REPLACE_ME/") then
               local lua_entity = entity:get_luaentity()
                 lua_entity.visual = "cube"
                 entity:set_properties({
@@ -42,6 +51,25 @@ fs: |
                     textures = {"core_console.png", "core_console.png", "core_console.png", "core_console.png",
                                 "core_console.png", "core_console.png"}
                 })
+                lua_entity.on_punch = function(self, player)
+                    print(dump(player))
+                    local directory_entry = platforms:get_entry(self.entry_string)
+                    local conn = platforms:get_platform(common.get_platform_string(player)):get_attachment()
+                    local platform_path = directory_entry.platform_path
+                    local include_file_path = platform_path == "/" and platform_path .. ".form.lua" or platform_path .. "/" ..
+                                      ".form.lua"
+                    local result, include_string = pcall(np_prot.file_read, conn, include_file_path)
+                    if result then
+                      minetest.chat_send_all(".form.lua loaded")
+                      local context = {player = player}
+                      setmetatable(context, { __index = _G })
+                      local form = loadstring(include_string)
+                      setfenv(form, context)
+                      form()
+                    else
+                      minetest.chat_send_all("no .form.lua was found")
+                    end
+                end
                 return "core_console.png"
             end
             end
